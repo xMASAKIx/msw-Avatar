@@ -8,14 +8,13 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "MSW Fashion Monitor (Public API) is Running!"
+    return "MSW Fashion Monitor ULTRA is Running!"
 
 def run_web():
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
 # --- 設定區域 ---
-# 這裡貼上你最新的長數字名單
 PLAYER_MAP = {
     "20372100005827913": "Budin",
     "20372100001023713": "Majajaja",
@@ -26,40 +25,54 @@ PLAYER_MAP = {
 }
 
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1497581193770696764/emqr6qKa6f96C1ukjANQbKGVb_Q5Aaxvav-khvYN1bnZFR2NKFnik5B5-ZYo4KokRO0P"
-CHECK_INTERVAL = 20 
+CHECK_INTERVAL = 30 # 稍微拉長間隔，減少被 API 封鎖快取的機率
 
-# 核心 API 路徑
 SOCIAL_API = "https://mverse-api.nexon.com/social/v1/profile/{}"
 PUBLIC_API = "https://mverse-api.nexon.com/profile/v1/home/profileCode/{}"
 
-# 用來儲存轉換後的 5 碼代碼與造型紀錄
-player_configs = {} # 格式: {ppsn: {"pcode": "xxxxx", "name": "...", "last_url": "..."}}
+player_configs = {}
 
 def initialize_players():
-    print("--- 正在初始化玩家代碼 ---")
+    print("--- 🚀 啟動終極監控模式 ---")
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+    }
     for ppsn, name in PLAYER_MAP.items():
         try:
-            # 先從 Social API 取得 5 碼 profileCode
-            res = requests.get(SOCIAL_API.format(ppsn), timeout=10)
+            # 獲取 5 碼 ID
+            res = requests.get(SOCIAL_API.format(ppsn), headers=headers, timeout=10)
             p_code = res.json().get('data', {}).get('profileCode')
             if p_code:
-                player_configs[ppsn] = {"pcode": p_code, "name": name, "last_url": None}
-                print(f"✅ 已連結: {name} -> {p_code}")
+                # 初始獲取造型
+                test_url = f"{PUBLIC_API.format(p_code)}?nocache={int(time.time())}"
+                res_img = requests.get(test_url, headers=headers, timeout=10)
+                initial_url = res_img.json().get('data', {}).get('avatarImageUrl', '')
+                
+                player_configs[ppsn] = {"pcode": p_code, "name": name, "last_url": initial_url}
+                print(f"✅ 已鎖定: {name} ({p_code}) | 初始網址: ...{initial_url[-15:]}")
             else:
-                print(f"❌ 找不到 {name} 的 5 碼代碼")
-        except:
-            print(f"❌ 初始化 {name} 失敗")
+                print(f"❌ 無法解析 {name} 的代碼")
+        except Exception as e:
+            print(f"❌ 初始化 {name} 失敗: {e}")
 
 def check_fashion():
-    print(f"--- [{time.strftime('%H:%M:%S')}] 造型雷達掃描中 ---")
+    print(f"--- [{time.strftime('%H:%M:%S')}] 深度掃描中 ---")
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Referer': 'https://mverse.nexon.com/'
+    }
+    
     for ppsn, config in player_configs.items():
         try:
             pcode = config['pcode']
             name = config['name']
             
-            # 使用公開 API 抓取造型圖
-            url = f"{PUBLIC_API.format(pcode)}?t={int(time.time())}"
-            headers = {'User-Agent': 'Mozilla/5.0'}
+            # 使用更強力的隨機參數
+            url = f"{PUBLIC_API.format(pcode)}?v={time.time_ns()}"
             
             res = requests.get(url, headers=headers, timeout=10)
             current_avatar = res.json().get('data', {}).get('avatarImageUrl', '')
@@ -67,28 +80,30 @@ def check_fashion():
             if not current_avatar:
                 continue
 
-            # 初始紀錄
-            if config['last_url'] is None:
-                config['last_url'] = current_avatar
-                continue
-
-            # 偵測變更
+            # 檢查網址是否有任何字元變動
             if current_avatar != config['last_url']:
-                print(f"🔥 偵測到造型更新: {name}")
+                print(f"🔔 【偵測到造型更新】玩家: {name}")
+                print(f"   舊網址: {config['last_url']}")
+                print(f"   新網址: {current_avatar}")
+                
                 config['last_url'] = current_avatar
                 
                 payload = {
                     "embeds": [{
-                        "title": "✨ 發現新造型！",
-                        "description": f"玩家：**{name}**\n代碼：`{pcode}`",
+                        "title": "✨ 造型大更新！",
+                        "description": f"玩家：**{name}**\n代碼：`{pcode}`\n\n偵測到玩家更換了全身裝扮。",
                         "image": {"url": current_avatar}, 
                         "color": 15844367,
-                        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+                        "footer": {"text": f"更新時間: {time.strftime('%Y-%m-%d %H:%M:%S')}"}
                     }]
                 }
                 requests.post(DISCORD_WEBHOOK_URL, json=payload)
+            else:
+                # 靜默掃描，不發通知
+                pass
+                
         except Exception as e:
-            print(f"掃描 {ppsn} 出錯: {e}")
+            print(f"掃描 {ppsn} 失敗: {e}")
 
 def main_loop():
     initialize_players()
