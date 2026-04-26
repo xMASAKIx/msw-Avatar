@@ -93,11 +93,17 @@ def check_fashion():
                 
                 payload = {
                     "embeds": [{
-                        "title": "✨ 造型大更新！",
-                        "description": f"玩家：**{name}**\n代碼：`{pcode}`\n\n偵測到玩家更換了全身裝扮。",
+                        "title": "✨ 造型更新！",
+                        "description": (
+                            f"玩家：**{name}**\n"
+                            f"代碼：`{pcode}`\n"
+                            f"PPSN：`{ppsn}`\n\n"  # 這裡增加了 PPSN 資料
+                            f"偵測到玩家更換了造型"
+                        ),
                         "image": {"url": current_avatar}, 
                         "color": 15844367,
-                        "footer": {"text": f"更新時間: {time.strftime('%Y-%m-%d %H:%M:%S')}"}
+                        "footer": {"text": f"更新時間: {time.strftime('%Y-%m-%d %H:%M:%S')}"},
+                        "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
                     }]
                 }
                 requests.post(DISCORD_WEBHOOK_URL, json=payload)
