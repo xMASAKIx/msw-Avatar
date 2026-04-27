@@ -93,16 +93,17 @@ def check_fashion():
                 
                 payload = {
                     "embeds": [{
-                        "title": "✨ 造型更新！",
+                        "title": "✨ 發現新造型！",
                         "description": (
-                            f"玩家：**{name}**\n"
-                            f"代碼：`{pcode}`\n"
-                            f"PPSN：`{ppsn}`\n\n"  # 這裡增加了 PPSN 資料
-                            f"偵測到玩家更換了造型"
+                            f"玩家名稱：**{name}**\n\n"
+                            f"點擊下方代碼可快速選取複製：\n"
+                            f"🔹 個人代碼：`{pcode}`\n"
+                            f"🔹 玩家 PPSN：`{ppsn}`\n\n"
+                            f"這傢伙換了造型，快摳！"
                         ),
                         "image": {"url": current_avatar}, 
                         "color": 15844367,
-                        "footer": {"text": f"更新時間: {time.strftime('%Y-%m-%d %H:%M:%S')}"},
+                        "footer": {"text": f"偵測時間: {time.strftime('%H:%M:%S')}"},
                         "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
                     }]
                 }
