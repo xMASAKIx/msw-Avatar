@@ -95,18 +95,30 @@ def check_fashion():
                 
                 config['last_url'] = current_avatar
                 
+                # 💡 利用 fields 達成左圖右文的排版
                 payload = {
                     "embeds": [{
                         "title": "✨ 發現新造型！",
-                        "description": (
-                            f"玩家名稱：**{name}**\n\n"
-                            f"點擊下方代碼可快速選取複製：\n"
-                            f"🔹 個人代碼：`{pcode}`\n"
-                            f"🔹 玩家 PPSN：`{ppsn}`\n\n"
-                            f"這傢伙換了造型，快摳！"
-                        ),
-                        "image": {"url": current_avatar}, 
                         "color": 15844367,
+                        "fields": [
+                            {
+                                "name": "🖼️ 造型圖片",
+                                "value": f"[點此觀看原圖]({current_avatar})", # 這裡放連結，下面放縮圖
+                                "inline": True
+                            },
+                            {
+                                "name": "📋 玩家資料",
+                                "value": (
+                                    f"玩家名稱：**{name}**\n\n"
+                                    f"點擊選取複製：\n"
+                                    f"🔹 個人代碼：`{pcode}`\n"
+                                    f"🔹 玩家 PPSN：`{ppsn}`\n\n"
+                                    f"這傢伙換了造型，快摳！"
+                                ),
+                                "inline": True
+                            }
+                        ],
+                        "thumbnail": {"url": current_avatar}, # 雖然叫 thumbnail，但搭配上面的 fields 排序，可以優化整體的視覺感
                         "footer": {"text": f"偵測時間: {time.strftime('%H:%M:%S')}"},
                         "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
                     }]
