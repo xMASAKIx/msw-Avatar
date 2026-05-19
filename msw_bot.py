@@ -32,11 +32,11 @@ PLAYER_MAP = {
 }
 
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1497581193770696764/emqr6qKa6f96C1ukjANQbKGVb_Q5Aaxvav-khvYN1bnZFR2NKFnik5B5-ZYo4KokRO0P"
-CHECK_INTERVAL = 30 # 稍微拉長間隔，減少被 API 封鎖快取的機率
+CHECK_INTERVAL = 20 # 稍微拉長間隔，減少被 API 封鎖快取的機率
 
 # 🚀 這裡填入你的裝備提取網站 URL (例如 GitHub Pages 或 Render、Vercel 網址)
 # 如果你是在本機測試，可以先用 "http://127.0.0.1:5500/index.html" (根據你的 Live Server 調整)
-WEB_URL = "https://xmasakix.github.io/MSW-ID/index.html" 
+WEB_URL = "https://xmasakix.github.io/msw-extractor-web/index.html" 
 
 SOCIAL_API = "https://mverse-api.nexon.com/social/v1/profile/{}"
 PUBLIC_API = "https://mverse-api.nexon.com/profile/v1/home/profileCode/{}"
@@ -117,7 +117,7 @@ def check_fashion():
                                 "name": "📋 玩家資料",
                                 "value": (
                                     f"玩家名稱：**{name}**\n\n"
-                                    f"🔗 **[🔍 點此前往裝備列表]({search_link})**\n\n"
+                                    f"🔗 **[🔍 點此前往提取裝備列表]({search_link})**\n\n"
                                     f"點擊選取複製：\n"
                                     f"🔹 個人代碼：`{pcode}`\n"
                                     f"🔹 玩家 PPSN：`{ppsn}`\n\n"
