@@ -109,11 +109,6 @@ def check_fashion():
                         "color": 15844367,
                         "fields": [
                             {
-                                "name": "🖼️ 造型圖片",
-                                "value": f"[點此觀看原圖]({current_avatar})",
-                                "inline": True
-                            },
-                            {
                                 "name": "📋 玩家資料",
                                 "value": (
                                     f"玩家名稱：**{name}**\n\n"
