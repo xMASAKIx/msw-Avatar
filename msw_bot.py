@@ -121,7 +121,7 @@ def check_fashion():
                                 "inline": True
                             }
                         ],
-                        "thumbnail": {"url": current_avatar},
+                        "thumbnail": {"url": custom_image},
                         "footer": {"text": f"偵測時間: {time.strftime('%H:%M:%S')}"},
                         "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
                     }]
