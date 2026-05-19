@@ -34,8 +34,7 @@ PLAYER_MAP = {
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1497581193770696764/emqr6qKa6f96C1ukjANQbKGVb_Q5Aaxvav-khvYN1bnZFR2NKFnik5B5-ZYo4KokRO0P"
 CHECK_INTERVAL = 20 # 稍微拉長間隔，減少被 API 封鎖快取的機率
 
-# 🚀 這裡填入你的裝備提取網站 URL (例如 GitHub Pages 或 Render、Vercel 網址)
-# 如果你是在本機測試，可以先用 "http://127.0.0.1:5500/index.html" (根據你的 Live Server 調整)
+# 🚀 這裡填入你的裝備提取網站 URL
 WEB_URL = "https://xmasakix.github.io/msw-extractor-web/index.html" 
 
 SOCIAL_API = "https://mverse-api.nexon.com/social/v1/profile/{}"
@@ -102,7 +101,7 @@ def check_fashion():
                 # 🚀 動態生成帶有玩家 5碼ID 參數的直達連結
                 search_link = f"{WEB_URL}?player_id={pcode}"
                 
-                # 利用 fields 達成左圖右文的排版
+                # 建立發送給 Discord 的資料
                 payload = {
                     "embeds": [{
                         "title": "✨ 發現新造型！",
@@ -121,7 +120,9 @@ def check_fashion():
                                 "inline": True
                             }
                         ],
-                        "thumbnail": {"url": custom_image},
+                        # 💡 修正 1：把 custom_image 改成 current_avatar
+                        # 💡 修正 2：從 thumbnail 改成 image，這樣圖片就會變成下方大圖
+                        "image": {"url": current_avatar}, 
                         "footer": {"text": f"偵測時間: {time.strftime('%H:%M:%S')}"},
                         "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
                     }]
