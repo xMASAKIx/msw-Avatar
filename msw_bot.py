@@ -34,6 +34,10 @@ PLAYER_MAP = {
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1497581193770696764/emqr6qKa6f96C1ukjANQbKGVb_Q5Aaxvav-khvYN1bnZFR2NKFnik5B5-ZYo4KokRO0P"
 CHECK_INTERVAL = 30 # 稍微拉長間隔，減少被 API 封鎖快取的機率
 
+# 🚀 這裡填入你的裝備提取網站 URL (例如 GitHub Pages 或 Render、Vercel 網址)
+# 如果你是在本機測試，可以先用 "http://127.0.0.1:5500/index.html" (根據你的 Live Server 調整)
+WEB_URL = "https://xmasakix.github.io/MSW-ID/index.html" 
+
 SOCIAL_API = "https://mverse-api.nexon.com/social/v1/profile/{}"
 PUBLIC_API = "https://mverse-api.nexon.com/profile/v1/home/profileCode/{}"
 
@@ -95,7 +99,10 @@ def check_fashion():
                 
                 config['last_url'] = current_avatar
                 
-                # 💡 利用 fields 達成左圖右文的排版
+                # 🚀 動態生成帶有玩家 5碼ID 參數的直達連結
+                search_link = f"{WEB_URL}?player_id={pcode}"
+                
+                # 利用 fields 達成左圖右文的排版
                 payload = {
                     "embeds": [{
                         "title": "✨ 發現新造型！",
@@ -103,13 +110,14 @@ def check_fashion():
                         "fields": [
                             {
                                 "name": "🖼️ 造型圖片",
-                                "value": f"[點此觀看原圖]({current_avatar})", # 這裡放連結，下面放縮圖
+                                "value": f"[點此觀看原圖]({current_avatar})",
                                 "inline": True
                             },
                             {
                                 "name": "📋 玩家資料",
                                 "value": (
                                     f"玩家名稱：**{name}**\n\n"
+                                    f"🔗 **[🔍 點此前往裝備列表]({search_link})**\n\n"
                                     f"點擊選取複製：\n"
                                     f"🔹 個人代碼：`{pcode}`\n"
                                     f"🔹 玩家 PPSN：`{ppsn}`\n\n"
@@ -118,7 +126,7 @@ def check_fashion():
                                 "inline": True
                             }
                         ],
-                        "thumbnail": {"url": current_avatar}, # 雖然叫 thumbnail，但搭配上面的 fields 排序，可以優化整體的視覺感
+                        "thumbnail": {"url": current_avatar},
                         "footer": {"text": f"偵測時間: {time.strftime('%H:%M:%S')}"},
                         "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
                     }]
