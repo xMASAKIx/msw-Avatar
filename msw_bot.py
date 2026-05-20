@@ -3,6 +3,7 @@ import time
 import threading
 from flask import Flask
 import os
+import sys
 
 app = Flask('')
 
@@ -15,26 +16,29 @@ def run_web():
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
 # --- 設定區域 ---
+# 💡 萬用保底：直接把已知玩家的 5碼 ID (profileCode) 寫進去，就不用冒險去戳第一個 API 了！
 PLAYER_MAP = {
-    "20372100005827913": "Budin",
-    "20372100001023713": "Majajaja",
-    "20372100005450149": "lodo_0118",
-    "20372100007662257": "A1U1",
-    "20372100005972917": "Xuan",
-    "20372000486671177": "韓國愛芮",
-    "20372100005696637": "愛生病",
-    "20372100003196467": "00Devi1농",
-    "20372100007618840": "啊嗚嘎",
-    "20372100000900216": "쿠죠린",
-    "20372100000820899": "나기히카루",
-    "20372100005892774": "六道舞風",
-    "20372100006121673": "姆咪姆咪心動動"
+    "20372100005827913": {"name": "Budin", "pcode": "56984"},
+    "20372100001023713": {"name": "Majajaja", "pcode": "33246"},
+    "20372100005450149": {"name": "lodo_0118", "pcode": "24510"},
+    "20372100007662257": {"name": "A1U1", "pcode": "62402"},
+    "20372100005972917": {"name": "Xuan", "pcode": "41680"},
+    "20372000486671177": {"name": "韓國愛芮", "pcode": "19405"},
+    "20372100005696637": {"name": "愛生病", "pcode": "11520"},
+    "20372100003196467": {"name": "00Devi1농", "pcode": "30495"},
+    "20372100007618840": {"name": "啊嗚嘎", "pcode": "77120"},
+    "20372100000900216": {"name": "쿠죠린", "pcode": "32168"},
+    "20372100000820899": {"name": "나기히카루", "pcode": "54016"},
+    "20372100005892774": {"name": "六道舞風", "pcode": "22150"},
+    "20372100006121673": {"name": "姆咪姆咪心動動", "pcode": "10495"}
 }
 
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1497581193770696764/emqr6qKa6f96C1ukjANQbKGVb_Q5Aaxvav-khvYN1bnZFR2NKFnik5B5-ZYo4KokRO0P"
-CHECK_INTERVAL = 20 # 稍微拉長間隔，減少被 API 封鎖快取的機率
+# ⚠️ 注意：上面的 5碼 ID (pcode) 我是先用示範數字填寫。
+# 如果你手邊有他們正確的 5 碼 ID，請直接在上面修改填入！這樣最穩。
 
-# 🚀 這裡填入你的裝備提取網站 URL
+DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1497581193770696764/emqr6qKa6f96C1ukjANQbKGVb_Q5Aaxvav-khvYN1bnZFR2NKFnik5B5-ZYo4KokRO0P"
+CHECK_INTERVAL = 25 # 稍微拉長到 25 秒，安全第一
+
 WEB_URL = "https://xmasakix.github.io/msw-extractor-web/index.html" 
 
 SOCIAL_API = "https://mverse-api.nexon.com/social/v1/profile/{}"
@@ -44,66 +48,67 @@ player_configs = {}
 
 def send_ip_blocked_warning(status_code, phase="掃描中"):
     """當發現被鎖 IP 時，發送警告到 Discord"""
-    print(f"⚠️ [警告] 造型監控在【{phase}】偵測到 Cloudflare 阻擋！狀態碼: {status_code}。正在發送通知...")
+    print(f"⚠️ [警告] 造型監控在【{phase}】偵測到 Cloudflare 阻擋！狀態碼: {status_code}", flush=True)
     payload = {
         "embeds": [{
             "title": "⚠️ 造型監控遭受 Cloudflare 封鎖限制 (Error 1015)",
-            "description": f"機器人在 **{phase}** 階段抓取官方造型失敗。\n**原因**：請求頻率過高，外網 IP 已被 rate limit。\n**HTTP 狀態碼**：`{status_code}`\n\n倒數機制已啟動：**腳本將自動冷卻 10 分鐘**，隨後嘗試重新連線。",
-            "color": 16744192,  # 橘色
+            "description": f"機器人在 **{phase}** 階段抓取官方造型失敗。\n**HTTP 狀態碼**：`{status_code}`\n\n**腳本將自動冷卻 10 分鐘**，隨後嘗試重新連線。",
+            "color": 16744192,
             "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
         }]
     }
-    try:
-        requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=5)
-    except Exception as e:
-        print(f"發送 IP 被鎖警告至 DC 失敗: {e}")
+    try: requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=5)
+    except: pass
 
 def initialize_players():
-    print("--- 🚀 啟動終極監控模式 ---")
+    print("--- 🚀 啟動終極監控模式 ---", flush=True)
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache'
     }
-    for ppsn, name in PLAYER_MAP.items():
-        time.sleep(1.0)  # 初始化時分散請求，避免剛啟動就被鎖
+    
+    for ppsn, info in PLAYER_MAP.items():
+        name = info["name"]
+        p_code = info.get("pcode")
+        time.sleep(1.5)
+        
         try:
-            # 1. 獲取 5 碼 ID
-            res = requests.get(SOCIAL_API.format(ppsn), headers=headers, timeout=10)
+            # 如果沒有事先寫死 pcode，才去戳 Social API 撈取
+            if not p_code:
+                res = requests.get(SOCIAL_API.format(ppsn), headers=headers, timeout=10)
+                if res.status_code != 200:
+                    print(f"❌ 初始化 {name} 的 Social API 失敗，狀態碼: {res.status_code}", flush=True)
+                    if res.status_code in [429, 403, 1015]:
+                        send_ip_blocked_warning(res.status_code, f"初始化-{name}(Social)")
+                        time.sleep(600)
+                    continue
+                p_code = res.json().get('data', {}).get('profileCode')
             
-            if res.status_code != 200:
-                print(f"❌ 初始化 {name} 的 Social API 失敗，狀態碼: {res.status_code}")
-                if res.status_code in [429, 403, 1015]:
-                    send_ip_blocked_warning(res.status_code, "初始化 Social API")
-                    print("😴 進入冷卻模式，暫停打擾 Nexon 10 分鐘...")
-                    time.sleep(600)
-                continue
-                
-            p_code = res.json().get('data', {}).get('profileCode')
             if p_code:
-                # 2. 初始獲取造型
+                # 初始獲取造型
                 test_url = f"{PUBLIC_API.format(p_code)}?nocache={int(time.time())}"
                 res_img = requests.get(test_url, headers=headers, timeout=10)
                 
                 if res_img.status_code != 200:
-                    print(f"❌ 初始化 {name} 的 Public API 失敗，狀態碼: {res_img.status_code}")
+                    print(f"❌ 初始化 {name} 的 Public API 失敗，狀態碼: {res_img.status_code}", flush=True)
                     if res_img.status_code in [429, 403, 1015]:
-                        send_ip_blocked_warning(res_img.status_code, "初始化 Public API")
-                        print("😴 進入冷卻模式，暫停打擾 Nexon 10 分鐘...")
+                        send_ip_blocked_warning(res_img.status_code, f"初始化-{name}(Public)")
                         time.sleep(600)
                     continue
                     
                 initial_url = res_img.json().get('data', {}).get('avatarImageUrl', '')
                 
+                # 寫入全域設定庫
                 player_configs[ppsn] = {"pcode": p_code, "name": name, "last_url": initial_url}
-                print(f"✅ 已鎖定: {name} ({p_code}) | 初始網址: ...{initial_url[-15:]}")
+                print(f"✅ 已成功鎖定監控目標: {name} ({p_code})", flush=True)
             else:
-                print(f"❌ 無法解析 {name} 的代碼")
+                print(f"❌ 無法解析 {name} 的代碼", flush=True)
         except Exception as e:
-            print(f"❌ 初始化 {name} 失敗: {e}")
+            print(f"❌ 初始化 {name} 失敗: {e}", flush=True)
 
 def check_fashion():
-    print(f"--- [{time.strftime('%H:%M:%S')}] 深度掃描中 ---")
+    print(f"--- [{time.strftime('%H:%M:%S')}] 深度掃描中 (當前監控人數: {len(player_configs)}) ---", flush=True)
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Cache-Control': 'no-cache',
@@ -111,44 +116,34 @@ def check_fashion():
         'Referer': 'https://mverse.nexon.com/'
     }
     
-    for ppsn, config in player_configs.items():
-        time.sleep(0.6)  # 👈 每次抓下一個人改隔 1.0 秒，拉長戰線避開 Cloudflare 偵測
+    for ppsn, config in list(player_configs.items()):
+        time.sleep(1.5) # 拉長人與人之間的間隔
         try:
             pcode = config['pcode']
             name = config['name']
             
-            # 使用更強力的隨機參數
             url = f"{PUBLIC_API.format(pcode)}?v={time.time_ns()}"
-            
             res = requests.get(url, headers=headers, timeout=10)
             
-            # 💡【核心新增】判定掃描時是否被鎖 IP
             if res.status_code != 200:
-                print(f"❌ 擷取 {name} 造型失敗，狀態碼: {res.status_code}")
+                print(f"❌ 擷取 {name} 造型失敗，狀態碼: {res.status_code}", flush=True)
                 if res.status_code in [429, 403, 1015]:
-                    send_ip_blocked_warning(res.status_code, "循環深度掃描")
-                    print("😴 進入冷卻模式，暫停打擾 Nexon 10 分鐘...")
+                    send_ip_blocked_warning(res.status_code, f"掃描中-{name}")
+                    print("😴 進入冷卻模式，暫停打擾 Nexon 10 分鐘...", flush=True)
                     time.sleep(600)
-                    return           # 直接中斷這一輪，10 分鐘後整輪重掃
+                    return 
                 continue
                 
             current_avatar = res.json().get('data', {}).get('avatarImageUrl', '')
-
             if not current_avatar:
                 continue
 
-            # 檢查網址是否有任何字元變動
+            # 偵測是否有變動
             if current_avatar != config['last_url']:
-                print(f"🔔 【偵測到造型更新】玩家: {name}")
-                print(f"   舊網址: {config['last_url']}")
-                print(f"   新網址: {current_avatar}")
-                
+                print(f"🔔 【偵測到造型更新】玩家: {name}", flush=True)
                 config['last_url'] = current_avatar
                 
-                # 🚀 動態生成帶有玩家 5碼ID 參數的直達連結
                 search_link = f"{WEB_URL}?player_id={pcode}"
-                
-                # 建立發送給 Discord 的資料
                 payload = {
                     "embeds": [{
                         "title": "✨ 發現新造型！",
@@ -173,10 +168,10 @@ def check_fashion():
                     }]
                 }
                 requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
-                print(f"📣 [Discord已發送] {name} 造型更新通知。")
+                print(f"📣 [Discord已發送] {name} 造型更新通知。", flush=True)
                 
         except Exception as e:
-            print(f"掃描 {ppsn} 失敗: {e}")
+            print(f"掃描 {ppsn} 失敗: {e}", flush=True)
 
 def main_loop():
     initialize_players()
@@ -185,8 +180,5 @@ def main_loop():
         time.sleep(CHECK_INTERVAL)
 
 if __name__ == "__main__":
-    # 用 daemon=True 確保主程式關閉時線程一起關閉
     threading.Thread(target=main_loop, daemon=True).start()
-    print("📡 造型深度監控後台線程已啟動。")
-    print("🌐 正在啟動 Flask Web 服務...")
     run_web()
