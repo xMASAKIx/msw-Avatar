@@ -149,6 +149,7 @@ def check_fashion():
                     f"🔹 個人代碼：**[{pcode}]({search_link})**\n"
                     f"🔹 玩家 PPSN：`{ppsn}`\n\n"
                     f"這傢伙換了造型，快摳！"
+                )
                     
                 payload = {
                     "embeds": [{
