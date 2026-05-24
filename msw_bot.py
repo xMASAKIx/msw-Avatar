@@ -37,7 +37,7 @@ PLAYER_MAP = {
 # 如果你手邊有他們正確的 5 碼 ID，請直接在上面修改填入！這樣最穩。
 
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1497581193770696764/emqr6qKa6f96C1ukjANQbKGVb_Q5Aaxvav-khvYN1bnZFR2NKFnik5B5-ZYo4KokRO0P"
-CHECK_INTERVAL = 25 # 稍微拉長到 25 秒，安全第一
+CHECK_INTERVAL = 20 # 稍微拉長到 20 秒，安全第一
 
 WEB_URL = "https://xmasakix.github.io/msw-extractor-web/index.html" 
 
@@ -144,24 +144,17 @@ def check_fashion():
                 config['last_url'] = current_avatar
                 
                 search_link = f"{WEB_URL}?player_id={pcode}"
+                
+                description_text = (
+                    f"🔹 個人代碼：**[{pcode}]({search_link})**\n"
+                    f"🔹 玩家 PPSN：`{ppsn}`\n\n"
+                    f"這傢伙換了造型，快摳！"
+                    
                 payload = {
                     "embeds": [{
                         "title": f"✨ {name} 更換造型!!",
-                        "color": 15844367,
-                        "fields": [
-                            {
-                                "name": "📋 玩家資料",
-                                "value": (
-                                    f"玩家名稱：**{name}**\n\n"
-                                    f"🔗 **[🔍 點此前往提取裝備列表]({search_link})**\n\n"
-                                    f"點擊選取複製：\n"
-                                    f"🔹 個人代碼：`{pcode}`\n"
-                                    f"🔹 玩家 PPSN：`{ppsn}`\n\n"
-                                    f"這傢伙換了造型，快摳！"
-                                ),
-                                "inline": True
-                            }
-                        ],
+                        "color": 1044977,
+                        "description": description_text,
                         "image": {"url": current_avatar}, 
                         "footer": {"text": f"偵測時間: {time.strftime('%H:%M:%S')}"},
                         "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
