@@ -146,7 +146,7 @@ def check_fashion():
                 search_link = f"{WEB_URL}?player_id={pcode}"
                 payload = {
                     "embeds": [{
-                        "title": "✨ 發現新造型！",
+                        "title": "✨ **{name}**更換造型！",
                         "color": 15844367,
                         "fields": [
                             {
