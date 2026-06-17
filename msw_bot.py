@@ -41,7 +41,7 @@ PLAYER_MAP = {
 # 如果你手邊有他們正確的 5 碼 ID，請直接在上面修改填入！這樣最穩。
 
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1497581193770696764/emqr6qKa6f96C1ukjANQbKGVb_Q5Aaxvav-khvYN1bnZFR2NKFnik5B5-ZYo4KokRO0P"
-CHECK_INTERVAL = 20 # 稍微拉長到 20 秒，安全第一
+CHECK_INTERVAL = 15 # 稍微拉長到 20 秒，安全第一
 
 WEB_URL = "https://xmasakix.github.io/msw-extractor-web/index.html" 
 
