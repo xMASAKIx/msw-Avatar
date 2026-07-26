@@ -18,7 +18,7 @@ def run_web():
 # --- 設定區域 ---
 # 💡 萬用保底：直接把已知玩家的 5碼 ID (profileCode) 寫進去，就不用冒險去戳第一個 API 了！
 PLAYER_MAP = {
-    "20372100005827913": {"name": "Budin", "pcode": "hiegR"},
+    "20372100000209378": {"name": "PAKA", "pcode": "o4PjG"},
     "20372100001023713": {"name": "Majajaja", "pcode": "AqQiC"},
     "20372100007413276": {"name": "小火鍋", "pcode": "6S7eO"},
     "20372100007662257": {"name": "A1U1", "pcode": "9l1TR"},
