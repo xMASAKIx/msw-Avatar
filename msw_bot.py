@@ -34,14 +34,14 @@ PLAYER_MAP = {
     "20372100003567962": {"name": "봉봉", "pcode": "w99gQ"},
     "20372100000483518": {"name": "완두커엉", "pcode": "qVVQM"},
     "20372100000155226": {"name": "캡틴봉봉", "pcode": "0L5pI"},
-    "20372100006464041": {"name": "雫_雫", "pcode": "6yjbL"}
+    "20372100005241912": {"name": "阿福", "pcode": "6spUC"}
 }
 
 # ⚠️ 注意：上面的 5碼 ID (pcode) 我是先用示範數字填寫。
 # 如果你手邊有他們正確的 5 碼 ID，請直接在上面修改填入！這樣最穩。
 
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1497581193770696764/emqr6qKa6f96C1ukjANQbKGVb_Q5Aaxvav-khvYN1bnZFR2NKFnik5B5-ZYo4KokRO0P"
-CHECK_INTERVAL = 15 # 稍微拉長到 20 秒，安全第一
+CHECK_INTERVAL = 10 # 稍微拉長到 20 秒，安全第一
 
 WEB_URL = "https://xmasakix.github.io/msw-extractor-web/index.html" 
 
