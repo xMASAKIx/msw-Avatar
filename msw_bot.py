@@ -74,8 +74,8 @@ def send_discord_webhook(payload, context_desc="通知"):
                     except Exception:
                         print(f"  📌 原始回應: {res.text[:200]}...", flush=True)
                 
-                print(f"[{time.strftime('%H:%M:%S')}] 😴 進入冷卻模式：暫停 Render 運作 10 分鐘...", flush=True)
-                time.sleep(600)  # 強制暫停 10 分鐘
+                print(f"[{time.strftime('%H:%M:%S')}] 😴 進入冷卻模式：暫停 Render 運作 35 分鐘...", flush=True)
+                time.sleep(2100)  # 強制暫停 35 分鐘
                 continue         
             elif res.status_code in [200, 204]:
                 print(f"[{time.strftime('%H:%M:%S')}] 📣 [Discord已發送] {context_desc}", flush=True)
@@ -94,7 +94,7 @@ def send_ip_blocked_warning(status_code, phase="掃描中"):
     payload = {
         "embeds": [{
             "title": "⚠️ 造型監控遭受 Cloudflare 封鎖限制 (Error 1015)",
-            "description": f"機器人在 **{phase}** 階段抓取官方造型失敗。\n**HTTP 狀態碼**：`{status_code}`\n\n**腳本將自動冷卻 10 分鐘**，隨後嘗試重新連線。",
+            "description": f"機器人在 **{phase}** 階段抓取官方造型失敗。\n**HTTP 狀態碼**：`{status_code}`\n\n**腳本將自動冷卻 35 分鐘**，隨後嘗試重新連線。",
             "color": 16744192,
             "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
         }]
