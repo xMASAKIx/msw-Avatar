@@ -16,7 +16,6 @@ def run_web():
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
 
 # --- 設定區域 ---
-# 💡 萬用保底：直接把已知玩家的 5碼 ID (profileCode) 寫進去，就不用冒險去戳第一個 API 了！
 PLAYER_MAP = {
     "20372100000209378": {"name": "PAKA", "pcode": "o4PjG"},
     "20372100001023713": {"name": "Majajaja", "pcode": "AqQiC"},
@@ -37,11 +36,8 @@ PLAYER_MAP = {
     "20372100005241912": {"name": "阿福", "pcode": "6spUC"}
 }
 
-# ⚠️ 注意：上面的 5碼 ID (pcode) 我是先用示範數字填寫。
-# 如果你手邊有他們正確的 5 碼 ID，請直接在上面修改填入！這樣最穩。
-
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1497581193770696764/emqr6qKa6f96C1ukjANQbKGVb_Q5Aaxvav-khvYN1bnZFR2NKFnik5B5-ZYo4KokRO0P"
-CHECK_INTERVAL = 10 # 稍微拉長到 20 秒，安全第一
+CHECK_INTERVAL = 10 
 
 WEB_URL = "https://xmasakix.github.io/msw-extractor-web/index.html" 
 
@@ -49,6 +45,31 @@ SOCIAL_API = "https://mverse-api.nexon.com/social/v1/profile/{}"
 PUBLIC_API = "https://mverse-api.nexon.com/profile/v1/home/profileCode/{}"
 
 player_configs = {}
+
+def send_discord_webhook(payload, context_desc="通知"):
+    """安全發送 Discord Webhook，遇到 429 時會自動印出 Log 並暫停 10 分鐘 (600秒)"""
+    if not DISCORD_WEBHOOK_URL:
+        print("❌ 錯誤：未設定 DISCORD_WEBHOOK_URL！", flush=True)
+        return False
+
+    for attempt in range(5):
+        try:
+            res = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
+            
+            if res.status_code == 429:
+                print(f"[{time.strftime('%H:%M:%S')}] ⚠️ 觸發 Discord 429 Rate Limit！進入冷卻模式：暫停 Render 運作 10 分鐘...", flush=True)
+                time.sleep(600)  # 強制暫停 10 分鐘
+                continue         # 10分鐘後重新嘗試
+            elif res.status_code in [200, 204]:
+                print(f"[{time.strftime('%H:%M:%S')}] 📣 [Discord已發送] {context_desc}", flush=True)
+                return True
+            else:
+                print(f"[{time.strftime('%H:%M:%S')}] ❌ Discord 回傳非預期狀態碼: {res.status_code}", flush=True)
+                return False
+        except Exception as e:
+            print(f"[{time.strftime('%H:%M:%S')}] ❌ 發送 Discord 請求發生異常: {e}", flush=True)
+            time.sleep(2)
+    return False
 
 def send_ip_blocked_warning(status_code, phase="掃描中"):
     """當發現被鎖 IP 時，發送警告到 Discord"""
@@ -61,8 +82,7 @@ def send_ip_blocked_warning(status_code, phase="掃描中"):
             "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
         }]
     }
-    try: requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=5)
-    except: pass
+    send_discord_webhook(payload, "Cloudflare 封鎖警告")
 
 def initialize_players():
     print("--- 🚀 啟動終極監控模式 ---", flush=True)
@@ -78,7 +98,6 @@ def initialize_players():
         time.sleep(1.5)
         
         try:
-            # 如果沒有事先寫死 pcode，才去戳 Social API 撈取
             if not p_code:
                 res = requests.get(SOCIAL_API.format(ppsn), headers=headers, timeout=10)
                 if res.status_code != 200:
@@ -90,7 +109,6 @@ def initialize_players():
                 p_code = res.json().get('data', {}).get('profileCode')
             
             if p_code:
-                # 初始獲取造型
                 test_url = f"{PUBLIC_API.format(p_code)}?nocache={int(time.time())}"
                 res_img = requests.get(test_url, headers=headers, timeout=10)
                 
@@ -103,7 +121,6 @@ def initialize_players():
                     
                 initial_url = res_img.json().get('data', {}).get('avatarImageUrl', '')
                 
-                # 寫入全域設定庫
                 player_configs[ppsn] = {"pcode": p_code, "name": name, "last_url": initial_url}
                 print(f"✅ 已成功鎖定監控目標: {name} ({p_code})", flush=True)
             else:
@@ -121,7 +138,7 @@ def check_fashion():
     }
     
     for ppsn, config in list(player_configs.items()):
-        time.sleep(0.8) # 拉長人與人之間的間隔
+        time.sleep(0.8) 
         try:
             pcode = config['pcode']
             name = config['name']
@@ -142,7 +159,6 @@ def check_fashion():
             if not current_avatar:
                 continue
 
-            # 偵測是否有變動
             if current_avatar != config['last_url']:
                 print(f"🔔 【偵測到造型更新】玩家: {name}", flush=True)
                 config['last_url'] = current_avatar
@@ -165,13 +181,25 @@ def check_fashion():
                         "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
                     }]
                 }
-                requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
-                print(f"📣 [Discord已發送] {name} 造型更新通知。", flush=True)
+                
+                # 統一改用安全發送函數 (內含 429 防護)
+                send_discord_webhook(payload, f"{name} 造型更新通知")
                 
         except Exception as e:
             print(f"掃描 {ppsn} 失敗: {e}", flush=True)
 
 def main_loop():
+    # 💡 第一次開機時發送的啟動通知訊息
+    startup_payload = {
+        "embeds": [{
+            "title": "🤖 MSW 造型監控 ULTRA 已啟動！",
+            "description": f"機器人已成功開機，準備開始監控目標清單。",
+            "color": 65280,
+            "timestamp": time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+        }]
+    }
+    send_discord_webhook(startup_payload, "開機啟動通知")
+
     initialize_players()
     while True:
         check_fashion()
