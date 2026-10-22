@@ -47,7 +47,7 @@ PUBLIC_API = "https://mverse-api.nexon.com/profile/v1/home/profileCode/{}"
 player_configs = {}
 
 def send_discord_webhook(payload, context_desc="通知"):
-    """安全發送 Discord Webhook，遇到 429 時會自動印出 Log 並暫停 10 分鐘 (600秒)"""
+    """安全發送 Discord Webhook，遇到 429 時會完整印出 Discord 回傳的訊息與等待時間"""
     if not DISCORD_WEBHOOK_URL:
         print("❌ 錯誤：未設定 DISCORD_WEBHOOK_URL！", flush=True)
         return False
@@ -57,9 +57,20 @@ def send_discord_webhook(payload, context_desc="通知"):
             res = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
             
             if res.status_code == 429:
-                print(f"[{time.strftime('%H:%M:%S')}] ⚠️ 觸發 Discord 429 Rate Limit！進入冷卻模式：暫停 Render 運作 10 分鐘...", flush=True)
+                # 💡 試著解析 Discord 回傳的 429 詳細資料
+                try:
+                    error_data = res.json()
+                    retry_after = error_data.get('retry_after', '未知')
+                    message = error_data.get('message', '無訊息')
+                    print(f"[{time.strftime('%H:%M:%S')}] ⚠️ 觸發 Discord 429 Rate Limit！", flush=True)
+                    print(f"  📌 Discord 回傳訊息: {message}", flush=True)
+                    print(f"  ⏱️ 官方建議等待秒數 (retry_after): {retry_after} 秒", flush=True)
+                except Exception:
+                    print(f"[{time.strftime('%H:%M:%S')}] ⚠️ 觸發 Discord 429 Rate Limit！原始回應: {res.text}", flush=True)
+                
+                print(f"[{time.strftime('%H:%M:%S')}] 😴 進入冷卻模式：暫停 Render 運作 10 分鐘...", flush=True)
                 time.sleep(600)  # 強制暫停 10 分鐘
-                continue         # 10分鐘後重新嘗試
+                continue         
             elif res.status_code in [200, 204]:
                 print(f"[{time.strftime('%H:%M:%S')}] 📣 [Discord已發送] {context_desc}", flush=True)
                 return True
@@ -182,14 +193,12 @@ def check_fashion():
                     }]
                 }
                 
-                # 統一改用安全發送函數 (內含 429 防護)
                 send_discord_webhook(payload, f"{name} 造型更新通知")
                 
         except Exception as e:
             print(f"掃描 {ppsn} 失敗: {e}", flush=True)
 
 def main_loop():
-    # 💡 第一次開機時發送的啟動通知訊息
     startup_payload = {
         "embeds": [{
             "title": "🤖 MSW 造型監控 ULTRA 已啟動！",
