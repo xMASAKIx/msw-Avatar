@@ -47,7 +47,7 @@ PUBLIC_API = "https://mverse-api.nexon.com/profile/v1/home/profileCode/{}"
 player_configs = {}
 
 def send_discord_webhook(payload, context_desc="通知"):
-    """安全發送 Discord Webhook，遇到 429 時會完整印出 Discord 回傳的訊息與等待時間"""
+    """安全發送 Discord Webhook，專門適配 Cloudflare 1015 阻擋頁面與標準 429"""
     if not DISCORD_WEBHOOK_URL:
         print("❌ 錯誤：未設定 DISCORD_WEBHOOK_URL！", flush=True)
         return False
@@ -57,16 +57,22 @@ def send_discord_webhook(payload, context_desc="通知"):
             res = requests.post(DISCORD_WEBHOOK_URL, json=payload, timeout=10)
             
             if res.status_code == 429:
-                # 💡 試著解析 Discord 回傳的 429 詳細資料
-                try:
-                    error_data = res.json()
-                    retry_after = error_data.get('retry_after', '未知')
-                    message = error_data.get('message', '無訊息')
-                    print(f"[{time.strftime('%H:%M:%S')}] ⚠️ 觸發 Discord 429 Rate Limit！", flush=True)
-                    print(f"  📌 Discord 回傳訊息: {message}", flush=True)
-                    print(f"  ⏱️ 官方建議等待秒數 (retry_after): {retry_after} 秒", flush=True)
-                except Exception:
-                    print(f"[{time.strftime('%H:%M:%S')}] ⚠️ 觸發 Discord 429 Rate Limit！原始回應: {res.text}", flush=True)
+                print(f"[{time.strftime('%H:%M:%S')}] ⚠️ 觸發 Discord 429 / Cloudflare 封鎖！", flush=True)
+                
+                # 判斷回傳的是不是 Cloudflare 阻擋頁面 (HTML)
+                if "<html" in res.text.lower() or "cloudflare" in res.text.lower():
+                    print(f"  🚨 偵測到 Cloudflare 阻擋 (Error 1015)！IP 已被 Discord 暫時限制。", flush=True)
+                    print(f"  💡 提示：Cloudflare 封鎖通常不會給予具體秒數，官方一般會限制 10~30 分鐘不等。", flush=True)
+                else:
+                    # 嘗試解析標準 JSON 429
+                    try:
+                        error_data = res.json()
+                        retry_after = error_data.get('retry_after', '未知')
+                        message = error_data.get('message', '無訊息')
+                        print(f"  📌 Discord 回傳訊息: {message}", flush=True)
+                        print(f"  ⏱️ 官方建議等待秒數 (retry_after): {retry_after} 秒", flush=True)
+                    except Exception:
+                        print(f"  📌 原始回應: {res.text[:200]}...", flush=True)
                 
                 print(f"[{time.strftime('%H:%M:%S')}] 😴 進入冷卻模式：暫停 Render 運作 10 分鐘...", flush=True)
                 time.sleep(600)  # 強制暫停 10 分鐘
